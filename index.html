@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PadiCare – Deteksi Penyakit Daun Padi</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -15,15 +15,6 @@
       background: linear-gradient(to bottom right, #d4f3dd, #e6f4ea);
       font-family: 'Segoe UI', sans-serif;
       color: #2c3e50;
-      overflow-x: hidden;
-    }
-    #leaf-canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: -1;
     }
     .section-card {
       border-radius: 16px;
@@ -32,14 +23,7 @@
       margin-bottom: 2rem;
       background-color: rgba(255, 255, 255, 0.94);
     }
-    .drop-zone {
-      border: 2px dashed #198754;
-      padding: 2rem;
-      text-align: center;
-      border-radius: 12px;
-      background-color: #eafaf1;
-    }
-    canvas.preview {
+    img.preview {
       max-width: 100%;
       height: auto;
       border-radius: 12px;
@@ -60,80 +44,6 @@
   </style>
 </head>
 <body>
-<canvas id="leaf-canvas"></canvas>
-<script>
-  const canvas = document.getElementById("leaf-canvas");
-  const leafCtx = canvas.getContext("2d");
-  const leafImg = new Image();
-  leafImg.src = "https://cdn.jsdelivr.net/gh/adamrisqi/assets@main/leaf1.png";
-
-  let leaves = [];
-  let mouseX = 0;
-  let mouseY = 0;
-
-  function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  window.addEventListener("resize", resizeCanvas);
-  resizeCanvas();
-
-  canvas.addEventListener("mousemove", e => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-  });
-
-  class Leaf {
-    constructor() {
-      this.reset();
-    }
-    reset() {
-      this.x = Math.random() * canvas.width;
-      this.y = -Math.random() * canvas.height;
-      this.size = 20 + Math.random() * 15;
-      this.speed = 0.5 + Math.random() * 1.5;
-      this.angle = Math.random() * 2 * Math.PI;
-      this.spin = 0.002 + Math.random() * 0.01;
-    }
-    update() {
-      const dx = this.x - mouseX;
-      const dy = this.y - mouseY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 100) {
-        this.x += dx / dist;
-        this.y += dy / dist;
-      } else {
-        this.y += this.speed;
-        this.x += Math.sin(this.angle) * 0.5;
-        this.angle += this.spin;
-      }
-      if (this.y > canvas.height + this.size) this.reset();
-    }
-    draw() {
-      leafCtx.save();
-      leafCtx.translate(this.x, this.y);
-      leafCtx.rotate(this.angle);
-      leafCtx.globalAlpha = 0.6;
-      leafCtx.drawImage(leafImg, -this.size / 2, -this.size / 2, this.size, this.size);
-      leafCtx.restore();
-    }
-  }
-
-  for (let i = 0; i < 80; i++) {
-    leaves.push(new Leaf());
-  }
-
-  function animate() {
-    leafCtx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let leaf of leaves) {
-      leaf.update();
-      leaf.draw();
-    }
-    requestAnimationFrame(animate);
-  }
-
-  leafImg.onload = () => animate();
-</script>
 <div class="container py-5">
   <div class="text-center mb-5">
     <h1 class="text-success">🌾 PadiCare</h1>
@@ -142,25 +52,32 @@
 
   <div class="section-card text-center">
     <h4 class="text-success">Start Detection</h4>
-    <p>Mulai deteksi penyakit dengan mengunggah gambar daun padi.</p>
-    <input id="imageInput" class="form-control mb-3" type="file" accept="image/*" required>
-    <button onclick="submitImage()" class="btn btn-success px-5">Start Detection</button>
+    <p>Unggah atau ambil gambar daun padi.</p>
+    <input id="imageInput" class="form-control mb-3" type="file" accept="image/*" capture="environment" required>
+    <button onclick="submitImage()" class="btn btn-success px-5">Deteksi Sekarang</button>
   </div>
 
-  <div id="previewContainer" class="section-card text-center" style="display:none">
-    <h4 class="text-primary">Hasil Deteksi</h4>
-    <canvas id="previewCanvas" class="preview mb-3"></canvas>
-    <div class="chart-toggle mb-3">
-      <button class="btn btn-outline-success btn-sm me-2" onclick="showChart('bar', chartLabels, chartData)">Bar Chart</button>
-      <button class="btn btn-outline-success btn-sm me-2" onclick="showChart('pie', chartLabels, chartData)">Pie Chart</button>
-      <button class="btn btn-outline-dark btn-sm me-2" onclick="toggleJSON()">Raw JSON</button>
-      <button class="btn btn-outline-danger btn-sm" onclick="exportPDF()">Export to PDF</button>
+  <div id="previewContainer" class="section-card" style="display:none">
+    <div class="row">
+      <div class="col-md-6">
+        <canvas id="previewCanvas" class="preview mb-3"></canvas>
+        <canvas id="chartCanvas" class="mb-3"></canvas>
+        <div class="chart-toggle mb-3">
+          <button class="btn btn-outline-success btn-sm me-2" onclick="showChart('bar', chartLabels, chartData)">Bar Chart</button>
+          <button class="btn btn-outline-success btn-sm me-2" onclick="showChart('pie', chartLabels, chartData)">Pie Chart</button>
+          <button class="btn btn-outline-dark btn-sm me-2" onclick="toggleJSON()">Raw JSON</button>
+          <button class="btn btn-outline-danger btn-sm" onclick="exportPDF()">Export PDF</button>
+          <button class="btn btn-outline-primary btn-sm" onclick="exportCSV()">Export CSV</button>
+        </div>
+        <div id="jsonView" class="bg-light p-3 rounded" style="display: none;">
+          <pre id="jsonContent" style="white-space: pre-wrap; font-size: 0.9rem;"></pre>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h5 class="text-primary">Hasil & Penjelasan</h5>
+        <div id="results"></div>
+      </div>
     </div>
-    <canvas id="chartCanvas" width="400" height="300" class="mb-4"></canvas>
-    <div id="jsonView" class="bg-light p-3 rounded" style="display: none;">
-      <pre id="jsonContent" style="white-space: pre-wrap; font-size: 0.9rem;"></pre>
-    </div>
-    <div id="results"></div>
   </div>
 </div>
 
@@ -168,12 +85,71 @@
 let chart;
 let chartLabels = [];
 let chartData = [];
+let predictionHistory = [];
 
 function getDescription(cls) {
   if (cls.includes('blight')) return 'Bercak coklat memanjang, tangani dengan fungisida dan sanitasi.';
-  if (cls.includes('scald')) return 'Gejala seperti luka terbakar, cegah dengan rotasi tanaman.';
-  if (cls.includes('spot')) return 'Bercak bulat kecil coklat, cegah dengan pemupukan dan varietas tahan.';
+  if (cls.includes('scald')) return 'Luka bakar di daun, rotasi tanaman & air cukup.';
+  if (cls.includes('spot')) return 'Bercak bulat kecil, gunakan varietas tahan & pupuk.';
   return 'Deskripsi belum tersedia.';
+}
+
+function getRiskLevel(confidence) {
+  return confidence > 80 ? '🔴 Tinggi' : confidence > 50 ? '🟡 Sedang' : '🟢 Rendah';
+}
+
+function toggleJSON() {
+  const jsonDiv = document.getElementById('jsonView');
+  jsonDiv.style.display = jsonDiv.style.display === 'none' ? 'block' : 'none';
+}
+
+function exportPDF() {
+  import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js').then(jsPDF => {
+    const { jsPDF: JSPDF } = jsPDF;
+    const doc = new JSPDF();
+    doc.text("Hasil Prediksi Daun Padi", 10, 10);
+    chart.data.labels.forEach((label, i) => {
+      doc.text(`${label}: ${chart.data.datasets[0].data[i]}%`, 10, 20 + i * 10);
+    });
+    doc.save("hasil-prediksi.pdf");
+  });
+}
+
+function exportCSV() {
+  let csv = "Class,Confidence (%)\n";
+  chartLabels.forEach((label, i) => {
+    csv += `${label},${chartData[i]}\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'hasil-prediksi.csv';
+  link.click();
+}
+
+function showChart(type, labels, confidences) {
+  const ctx = document.getElementById('chartCanvas').getContext('2d');
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: type,
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Confidence %',
+        data: confidences,
+        backgroundColor: type === 'bar' ? 'rgba(40, 167, 69, 0.6)' : [
+          'rgba(40, 167, 69, 0.6)', 'rgba(33, 136, 56, 0.6)', 'rgba(25, 100, 40, 0.6)'
+        ],
+        borderColor: 'rgba(40, 167, 69, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: type === 'pie' } },
+      scales: type === 'bar' ? { y: { beginAtZero: true, max: 100 } } : {}
+    }
+  });
 }
 
 async function submitImage() {
@@ -199,7 +175,6 @@ async function submitImage() {
     canvas.width = img.width;
     canvas.height = img.height;
     ctx.drawImage(img, 0, 0);
-
     data.predictions.forEach(pred => {
       const [x, y, w, h] = [pred.x - pred.width / 2, pred.y - pred.height / 2, pred.width, pred.height];
       ctx.strokeStyle = '#28a745';
@@ -220,12 +195,14 @@ async function submitImage() {
   if (data.predictions && data.predictions.length > 0) {
     data.predictions.forEach(pred => {
       labels.push(pred.class.replace('_', ' '));
-      confidences.push((pred.confidence * 100).toFixed(2));
+      const conf = (pred.confidence * 100).toFixed(2);
+      confidences.push(conf);
       const card = document.createElement('div');
       card.className = 'prediction-card';
       card.innerHTML = `
         <div class="prediction-title">${pred.class.replace('_', ' ')}</div>
-        <div><strong>Confidence:</strong> ${(pred.confidence * 100).toFixed(2)}%</div>
+        <div><strong>Confidence:</strong> ${conf}%</div>
+        <div><strong>Resiko:</strong> ${getRiskLevel(conf)}</div>
         <div><strong>Deskripsi:</strong> ${getDescription(pred.class)}</div>
       `;
       resultDiv.appendChild(card);
@@ -233,61 +210,12 @@ async function submitImage() {
     chartLabels = labels;
     chartData = confidences;
     showChart('bar', labels, confidences);
+    predictionHistory.push({ file: file.name, result: data });
+    localStorage.setItem('padiHistory', JSON.stringify(predictionHistory));
   } else {
     resultDiv.innerHTML = '<p class="text-danger">Tidak ada penyakit terdeteksi.</p>';
   }
   document.getElementById("jsonContent").textContent = JSON.stringify(data, null, 2);
-}
-
-function showChart(type, labels, confidences) {
-  const ctx = document.getElementById('chartCanvas').getContext('2d');
-  if (chart) chart.destroy();
-  chart = new Chart(ctx, {
-    type: type,
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Confidence %',
-        data: confidences,
-        backgroundColor: type === 'bar' ? 'rgba(40, 167, 69, 0.6)' : [
-          'rgba(40, 167, 69, 0.6)',
-          'rgba(33, 136, 56, 0.6)',
-          'rgba(25, 100, 40, 0.6)'
-        ],
-        borderColor: 'rgba(40, 167, 69, 1)',
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: type === 'pie' }
-      },
-      scales: type === 'bar' ? {
-        y: {
-          beginAtZero: true,
-          max: 100
-        }
-      } : {}
-    }
-  });
-}
-
-function toggleJSON() {
-  const jsonDiv = document.getElementById('jsonView');
-  jsonDiv.style.display = jsonDiv.style.display === 'none' ? 'block' : 'none';
-}
-
-function exportPDF() {
-  import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js').then(jsPDF => {
-    const { jsPDF: JSPDF } = jsPDF;
-    const doc = new JSPDF();
-    doc.text("Hasil Prediksi Daun Padi", 10, 10);
-    chart.data.labels.forEach((label, i) => {
-      doc.text(`${label}: ${chart.data.datasets[0].data[i]}%`, 10, 20 + i * 10);
-    });
-    doc.save("hasil-prediksi.pdf");
-  });
 }
 </script>
 </body>
