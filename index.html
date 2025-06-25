@@ -52,8 +52,10 @@
 
   <div class="section-card text-center">
     <h4 class="text-success">Start Detection</h4>
-    <p>Unggah atau ambil gambar daun padi.</p>
+    <p>Unggah gambar atau masukkan URL gambar daun padi:</p>
     <input id="imageInput" class="form-control mb-3" type="file" accept="image/*" required>
+    <p class="my-2">ATAU</p>
+    <input id="urlInput" class="form-control mb-3" type="url" placeholder="https://example.com/image.jpg">
     <button onclick="submitImage()" class="btn btn-success px-5">Deteksi Sekarang</button>
   </div>
 
@@ -154,23 +156,32 @@ function showChart(type, labels, confidences) {
 
 async function submitImage() {
   const fileInput = document.getElementById('imageInput');
-  const file = fileInput.files[0];
-  if (!file) return alert("Pilih gambar terlebih dahulu.");
-
+  const urlInput = document.getElementById('urlInput').value.trim();
   const formData = new FormData();
-  formData.append("file", file);
+
+  let imgSrc;
+  if (fileInput.files.length > 0) {
+    formData.append("file", fileInput.files[0]);
+    imgSrc = URL.createObjectURL(fileInput.files[0]);
+  } else if (urlInput !== '') {
+    formData.append("url", urlInput);
+    imgSrc = urlInput;
+  } else {
+    alert("Pilih file atau masukkan URL gambar.");
+    return;
+  }
 
   const res = await fetch("https://yolo-backend-production.up.railway.app/predict", {
     method: "POST",
     body: formData
   });
-
   const data = await res.json();
-  document.getElementById('previewContainer').style.display = 'block';
 
+  document.getElementById('previewContainer').style.display = 'block';
   const canvas = document.getElementById('previewCanvas');
   const ctx = canvas.getContext('2d');
   const img = new Image();
+  img.crossOrigin = 'anonymous';
   img.onload = function () {
     canvas.width = img.width;
     canvas.height = img.height;
@@ -186,7 +197,7 @@ async function submitImage() {
       ctx.fillText(pred.class.replace('_', ' '), x + 6, y - 6);
     });
   };
-  img.src = URL.createObjectURL(file);
+  img.src = imgSrc;
 
   const resultDiv = document.getElementById('results');
   resultDiv.innerHTML = '';
@@ -210,7 +221,7 @@ async function submitImage() {
     chartLabels = labels;
     chartData = confidences;
     showChart('bar', labels, confidences);
-    predictionHistory.push({ file: file.name, result: data });
+    predictionHistory.push({ file: imgSrc, result: data });
     localStorage.setItem('padiHistory', JSON.stringify(predictionHistory));
   } else {
     resultDiv.innerHTML = '<p class="text-danger">Tidak ada penyakit terdeteksi.</p>';
