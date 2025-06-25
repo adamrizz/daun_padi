@@ -151,16 +151,24 @@
     <h4 class="text-primary">Hasil Deteksi</h4>
     <img id="previewImage" class="preview mb-3" />
     <div class="chart-toggle mb-3">
-      <button class="btn btn-outline-success btn-sm me-2" onclick="showChart('bar')">Bar Chart</button>
-      <button class="btn btn-outline-success btn-sm me-2" onclick="showChart('pie')">Pie Chart</button>
+      <button class="btn btn-outline-success btn-sm me-2" onclick="showChart('bar', chartLabels, chartData)">Bar Chart</button>
+      <button class="btn btn-outline-success btn-sm me-2" onclick="showChart('pie', chartLabels, chartData)">Pie Chart</button>
+      <button class="btn btn-outline-dark btn-sm me-2" onclick="toggleJSON()">Raw JSON</button>
       <button class="btn btn-outline-danger btn-sm" onclick="exportPDF()">Export to PDF</button>
     </div>
     <canvas id="chartCanvas" width="400" height="300" class="mb-4"></canvas>
+    <div id="jsonView" class="bg-light p-3 rounded" style="display: none;">
+      <pre id="jsonContent" style="white-space: pre-wrap; font-size: 0.9rem;"></pre>
+    </div>
     <div id="results"></div>
   </div>
 </div>
 
 <script>
+let chart;
+let chartLabels = [];
+let chartData = [];
+
 async function submitImage() {
   const fileInput = document.getElementById('imageInput');
   const file = fileInput.files[0];
@@ -196,13 +204,15 @@ async function submitImage() {
       `;
       resultDiv.appendChild(card);
     });
+    chartLabels = labels;
+    chartData = confidences;
     showChart('bar', labels, confidences);
   } else {
     resultDiv.innerHTML = '<p class="text-danger">Tidak ada penyakit terdeteksi.</p>';
   }
+  document.getElementById("jsonContent").textContent = JSON.stringify(data, null, 2);
 }
 
-let chart;
 function showChart(type, labels, confidences) {
   const ctx = document.getElementById('chartCanvas').getContext('2d');
   if (chart) chart.destroy();
@@ -235,6 +245,11 @@ function showChart(type, labels, confidences) {
       } : {}
     }
   });
+}
+
+function toggleJSON() {
+  const jsonDiv = document.getElementById('jsonView');
+  jsonDiv.style.display = jsonDiv.style.display === 'none' ? 'block' : 'none';
 }
 
 function exportPDF() {
