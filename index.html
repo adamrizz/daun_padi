@@ -39,7 +39,7 @@
       border-radius: 12px;
       background-color: #eafaf1;
     }
-    img.preview {
+    canvas.preview {
       max-width: 100%;
       height: auto;
       border-radius: 12px;
@@ -149,7 +149,7 @@
 
   <div id="previewContainer" class="section-card text-center" style="display:none">
     <h4 class="text-primary">Hasil Deteksi</h4>
-    <img id="previewImage" class="preview mb-3" />
+    <canvas id="previewCanvas" class="preview mb-3"></canvas>
     <div class="chart-toggle mb-3">
       <button class="btn btn-outline-success btn-sm me-2" onclick="showChart('bar', chartLabels, chartData)">Bar Chart</button>
       <button class="btn btn-outline-success btn-sm me-2" onclick="showChart('pie', chartLabels, chartData)">Pie Chart</button>
@@ -169,6 +169,13 @@ let chart;
 let chartLabels = [];
 let chartData = [];
 
+function getDescription(cls) {
+  if (cls.includes('blight')) return 'Bercak coklat memanjang, tangani dengan fungisida dan sanitasi.';
+  if (cls.includes('scald')) return 'Gejala seperti luka terbakar, cegah dengan rotasi tanaman.';
+  if (cls.includes('spot')) return 'Bercak bulat kecil coklat, cegah dengan pemupukan dan varietas tahan.';
+  return 'Deskripsi belum tersedia.';
+}
+
 async function submitImage() {
   const fileInput = document.getElementById('imageInput');
   const file = fileInput.files[0];
@@ -183,14 +190,32 @@ async function submitImage() {
   });
 
   const data = await res.json();
-  document.getElementById('previewImage').src = URL.createObjectURL(file);
   document.getElementById('previewContainer').style.display = 'block';
+
+  const canvas = document.getElementById('previewCanvas');
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.onload = function () {
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+
+    data.predictions.forEach(pred => {
+      const [x, y, w, h] = [pred.x - pred.width / 2, pred.y - pred.height / 2, pred.width, pred.height];
+      ctx.strokeStyle = '#28a745';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, w, h);
+      ctx.fillStyle = 'rgba(40, 167, 69, 0.8)';
+      ctx.fillRect(x, y - 20, ctx.measureText(pred.class).width + 12, 20);
+      ctx.fillStyle = '#fff';
+      ctx.fillText(pred.class.replace('_', ' '), x + 6, y - 6);
+    });
+  };
+  img.src = URL.createObjectURL(file);
 
   const resultDiv = document.getElementById('results');
   resultDiv.innerHTML = '';
-
-  const labels = [];
-  const confidences = [];
+  const labels = [], confidences = [];
 
   if (data.predictions && data.predictions.length > 0) {
     data.predictions.forEach(pred => {
@@ -201,6 +226,7 @@ async function submitImage() {
       card.innerHTML = `
         <div class="prediction-title">${pred.class.replace('_', ' ')}</div>
         <div><strong>Confidence:</strong> ${(pred.confidence * 100).toFixed(2)}%</div>
+        <div><strong>Deskripsi:</strong> ${getDescription(pred.class)}</div>
       `;
       resultDiv.appendChild(card);
     });
