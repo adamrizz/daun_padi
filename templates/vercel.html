@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>YOLO Detection via Roboflow</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    #preview { max-width: 100%; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Upload Gambar untuk Deteksi</h2>
+  <input type="file" id="fileInput" accept="image/*" />
+  <br>
+  <img id="preview" />
+  <pre id="result"></pre>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('preview');
+    const result = document.getElementById('result');
+
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      // Preview gambar
+      preview.src = URL.createObjectURL(file);
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(
+        "https://detect.roboflow.com/penyakit-daun-padi-kumqp/1?api_key=gyZFta9jhWeEDO9nlnZo",
+        { method: "POST", body: formData }
+      );
+
+      const data = await response.json();
+      result.textContent = JSON.stringify(data, null, 2);
+    });
+  </script>
+</body>
+</html>
