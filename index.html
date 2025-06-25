@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PadiCare – Deteksi Penyakit Daun Padi</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: linear-gradient(to bottom right, #d4f3dd, #e6f4ea);
+      font-family: 'Segoe UI', sans-serif;
+      color: #2c3e50;
+      overflow-x: hidden;
+    }
+    #leaf-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+    }
+    .section-card {
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      background-color: rgba(255, 255, 255, 0.94);
+    }
+    .drop-zone {
+      border: 2px dashed #198754;
+      padding: 2rem;
+      text-align: center;
+      border-radius: 12px;
+      background-color: #eafaf1;
+    }
+    img.preview {
+      max-width: 100%;
+      height: auto;
+      border-radius: 12px;
+      border: 1px solid #dee2e6;
+    }
+    h1, h4 {
+      font-weight: 600;
+    }
+    h1 {
+      font-size: 2.2rem;
+    }
+    .btn-success {
+      background-color: #198754;
+      border-color: #198754;
+    }
+    .btn-outline-success, .btn-outline-secondary, .btn-outline-dark {
+      border-radius: 20px;
+    }
+    .list-group-item {
+      border-radius: 8px;
+    }
+    .table th, .table td {
+      vertical-align: middle;
+    }
+    .chart-toggle button {
+      transition: all 0.2s ease-in-out;
+    }
+    .chart-toggle button:hover {
+      transform: translateY(-2px);
+    }
+    .prediction-card {
+      border: 1px solid #dee2e6;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      background-color: #fdfdfd;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .prediction-title {
+      font-weight: 600;
+      color: #198754;
+    }
+  </style>
+</head>
+<body>
+<canvas id="leaf-canvas"></canvas>
+<script>
+  const canvas = document.getElementById("leaf-canvas");
+  const leafCtx = canvas.getContext("2d");
+  const leafImg = new Image();
+  leafImg.src = "https://cdn.jsdelivr.net/gh/adamrisqi/assets@main/leaf1.png";
+
+  let leaves = [];
+  let mouseX = 0;
+  let mouseY = 0;
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+
+  canvas.addEventListener("mousemove", e => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  });
+
+  class Leaf {
+    constructor() {
+      this.reset();
+    }
+    reset() {
+      this.x = Math.random() * canvas.width;
+      this.y = -Math.random() * canvas.height;
+      this.size = 20 + Math.random() * 15;
+      this.speed = 0.5 + Math.random() * 1.5;
+      this.angle = Math.random() * 2 * Math.PI;
+      this.spin = 0.002 + Math.random() * 0.01;
+    }
+    update() {
+      const dx = this.x - mouseX;
+      const dy = this.y - mouseY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 100) {
+        this.x += dx / dist;
+        this.y += dy / dist;
+      } else {
+        this.y += this.speed;
+        this.x += Math.sin(this.angle) * 0.5;
+        this.angle += this.spin;
+      }
+      if (this.y > canvas.height + this.size) this.reset();
+    }
+    draw() {
+      leafCtx.save();
+      leafCtx.translate(this.x, this.y);
+      leafCtx.rotate(this.angle);
+      leafCtx.globalAlpha = 0.6;
+      leafCtx.drawImage(leafImg, -this.size / 2, -this.size / 2, this.size, this.size);
+      leafCtx.restore();
+    }
+  }
+
+  for (let i = 0; i < 80; i++) {
+    leaves.push(new Leaf());
+  }
+
+  function animate() {
+    leafCtx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let leaf of leaves) {
+      leaf.update();
+      leaf.draw();
+    }
+    requestAnimationFrame(animate);
+  }
+
+  leafImg.onload = () => animate();
+</script>
+<div class="container py-5">
+  <div class="text-center mb-5">
+    <h1 class="text-success">🌾 PadiCare</h1>
+    <p class="text-muted">Sistem Cerdas untuk Deteksi Penyakit Daun Padi</p>
+  </div>
+
+  <div class="section-card text-center">
+    <h4 class="text-success">Start Detection</h4>
+    <p>Mulai deteksi penyakit dengan mengunggah gambar daun padi.</p>
+    <form action="/" method="post" enctype="multipart/form-data">
+      <div class="drop-zone mb-3">
+        <input class="form-control" type="file" name="image" accept="image/*" required>
+        <small class="text-muted d-block mt-2">Drop & drag image or click to upload</small>
+      </div>
+      <button type="submit" class="btn btn-success px-5">Start Detection</button>
+    </form>
+  </div>
+
+  {% if hasil %}
+    <div class="section-card">
+      <h4 class="text-primary">Live Detection Result</h4>
+      {% if image_path %}
+        <img src="{{ image_path }}" class="preview mb-3">
+      {% endif %}
+    </div>
+
+    <div class="section-card">
+      <h4 class="text-info">Per-Class Accuracy</h4>
+      <div class="chart-toggle mb-3">
+        <button class="btn btn-outline-success btn-sm me-2" onclick="showChart('bar')">Bar Chart</button>
+        <button class="btn btn-outline-success btn-sm me-2" onclick="showChart('pie')">Pie Chart</button>
+        <button class="btn btn-outline-secondary btn-sm me-2" onclick="toggleView('table')">Tabel</button>
+        <button class="btn btn-outline-secondary btn-sm me-2" onclick="toggleView('card')">Card</button>
+        <button class="btn btn-outline-dark btn-sm me-2" onclick="toggleView('json')">Raw JSON</button>
+        <button class="btn btn-outline-danger btn-sm" onclick="exportPDF()">Export to PDF</button>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <canvas id="chartCanvas" width="400" height="300"></canvas>
+          <div id="jsonView" style="display: none;" class="mt-3 text-start bg-light p-3 rounded shadow-sm">
+            <pre id="jsonContent" style="font-size: 0.9rem; white-space: pre-wrap;"></pre>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div id="cardView">
+            {% for pred in hasil.predictions %}
+            <div class="prediction-card">
+              <div class="prediction-title">{{ pred.class.replace('_', ' ')|title }}</div>
+              <div><strong>Confidence:</strong> {{ "%.2f"|format(pred.confidence * 100) }}%</div>
+              <div><strong>Deskripsi:</strong>
+                {% if pred.class == 'leaf_blight' or pred.class == 'bacterial_leaf_blight' %}
+                  Bercak coklat memanjang
+                {% elif pred.class == 'leaf_scald' %}
+                  Bercak bakar oleh jamur
+                {% elif pred.class == 'brown_spot' %}
+                  Bercak kecil berwarna coklat
+                {% else %}
+                  Deskripsi belum tersedia
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <div id="tableView" style="display:none">
+            <table class="table table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th>Class Name</th>
+                  <th>Score</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for pred in hasil.predictions %}
+                <tr>
+                  <td>{{ pred.class.replace('_', ' ')|title }}</td>
+                  <td>{{ "%.2f"|format(pred.confidence * 100) }}%</td>
+                  <td>
+                    {% if pred.class == 'leaf_blight' or pred.class == 'bacterial_leaf_blight' %}
+                      Bercak coklat memanjang
+                    {% elif pred.class == 'leaf_scald' %}
+                      Bercak bakar oleh jamur
+                    {% elif pred.class == 'brown_spot' %}
+                      Bercak kecil berwarna coklat
+                    {% else %}
+                      Deskripsi belum tersedia
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <h4 class="text-secondary">Informasi Penyakit</h4>
+      <ul class="list-group">
+        {% for pred in hasil.predictions %}
+        <li class="list-group-item">
+          <strong>{{ pred.class|capitalize }}</strong><br>
+          {% if pred.class == 'leaf_blight' or pred.class == 'bacterial_leaf_blight' %}
+            Menyebabkan bercak memanjang pada daun. Tangani dengan fungisida & sanitasi lahan.
+          {% elif pred.class == 'leaf_scald' %}
+            Gejala seperti luka terbakar di tepi daun. Cegah dengan rotasi tanaman & pengairan baik.
+          {% elif pred.class == 'brown_spot' %}
+            Bercak bulat kecil coklat. Dapat dicegah dengan pemupukan tepat dan varietas tahan.
+          {% else %}
+            Informasi penyakit belum tersedia.
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+  {% if hasil and hasil.predictions %}
+    const ctx = document.getElementById('chartCanvas').getContext('2d');
+    const labels = [
+      {% for pred in hasil.predictions %}'{{ pred.class.replace('_', ' ')|title }}',{% endfor %}
+    ];
+    const confidences = [
+      {% for pred in hasil.predictions %}{{ (pred.confidence * 100)|round(2) }},{% endfor %}
+    ];
+
+    let chart;
+
+    function showChart(type) {
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: type,
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Confidence %',
+            data: confidences,
+            backgroundColor: type === 'bar' ? 'rgba(40, 167, 69, 0.6)' : [
+              'rgba(40, 167, 69, 0.6)',
+              'rgba(33, 136, 56, 0.6)',
+              'rgba(25, 100, 40, 0.6)'
+            ],
+            borderColor: 'rgba(40, 167, 69, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: type === 'pie' }
+          },
+          scales: type === 'bar' ? {
+            y: {
+              beginAtZero: true,
+              max: 100
+            }
+          } : {}
+        }
+      });
+    }
+
+    showChart('bar');
+
+    function toggleView(view) {
+      document.getElementById('cardView').style.display = view === 'card' ? 'block' : 'none';
+      document.getElementById('tableView').style.display = view === 'table' ? 'block' : 'none';
+      document.getElementById('jsonView').style.display = view === 'json' ? 'block' : 'none';
+    }
+
+    function exportPDF() {
+      import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js').then(jsPDF => {
+        const { jsPDF: JSPDF } = jsPDF;
+        const doc = new JSPDF();
+        doc.text("Hasil Prediksi Daun Padi", 10, 10);
+        labels.forEach((label, i) => {
+          doc.text(`${label}: ${confidences[i].toFixed(2)}%`, 10, 20 + i * 10);
+        });
+        doc.save("hasil-prediksi.pdf");
+      });
+    }
+
+    document.getElementById('jsonContent').textContent = JSON.stringify({{ hasil | tojson }}, null, 2);
+  {% endif %}
+</script>
+</body>
+</html>
