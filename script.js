@@ -9,7 +9,7 @@ upload.addEventListener("change", async () => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch("https://yolo-backend-production.up.railway.app/", {
+  const res = await fetch("https://yolo-backend-production.up.railway.app/predict", {
     method: "POST",
     body: formData
   });

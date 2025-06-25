@@ -73,7 +73,7 @@ async function submitImage() {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch("https://yolo-backend.up.railway.app/predict", {
+  const res = await fetch("https://yolo-backend-production.up.railway.app/predict", {
     method: "POST",
     body: formData
   });
